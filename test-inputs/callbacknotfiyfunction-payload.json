@@ -1,0 +1,8 @@
+{
+    "body": {
+        "testKey": "testValue"
+      },
+    "submitBatch": false,
+    "aws_stepfunction_execution_id": "arn:aws:states:us-west-2:xxxxxx:execution:SyncNestedStateMachine2-WoivRGmYCIiL:8e4dc8a3-d17ea-58ff99778",
+    "token": "AAAAKgAAAAIAAAAAAAAAAQmWE+HvBg8r2HtTiR5bFH0xi++vifRwuLvMg=="
+}

@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "sample-orchestrator"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1mj37idniykfg"
+s3_prefix = "sample-orchestrator"
+region = "us-west-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "BatchScriptName=\"batch-notify-step-function.sh\" VPCID=\"vpc-3c7aad\" Subnets=\"subnet-f378,subnet-d765f\" batchSleepDuration=\"30\""

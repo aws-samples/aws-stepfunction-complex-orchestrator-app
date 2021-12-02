@@ -1,0 +1,98 @@
+{
+	"StartAt": "Kickoff Test Lambda Task1",
+	"States": {
+		"Kickoff Test Lambda Task1": {
+			"Type": "Task",
+			"Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+			"Parameters": {
+				"FunctionName": "${CallbackNotifyFunction}",
+				"InvocationType": "Event",
+
+				"Payload": {
+					"body": {
+						"testParam": "testValue"
+					},
+					"aws_stepfunction_execution_id.$": "$$.Execution.Id",
+					"token.$": "$$.Task.Token",
+					"submitBatch": false
+				}
+			},
+			"Next": "Kickoff nested Step function3 in sync mode"
+		},
+		"Kickoff nested Step function3 in sync mode": {
+			"Comment": "Start an execution and wait for it to notify on completion",
+			"Type": "Task",
+			"Resource": "arn:aws:states:::states:startExecution.sync:2",
+			"TimeoutSeconds": 100,
+			"Parameters": {
+				"StateMachineArn": "${CallbackNotifyStepFunction3Arn}",
+				"Input": {
+					"NeedCallback": true,
+					"Payload": {
+						"input": "TestPayladFromParent"
+					},
+					"AWS_STEP_FUNCTIONS_STARTED_BY_EXECUTION_ID.$": "$$.Execution.Id",
+					"TaskToken.$": "$$.Task.Token"
+				}
+			},
+			"Next": "Submit Batch Job Array using Sync"
+		},
+		"Submit Batch Job Array using Sync": {
+			"Comment": "Submit array of Batch Jobs using Sync",
+			"Type": "Task",
+			"Resource": "arn:aws:states:::batch:submitJob.sync",
+			"TimeoutSeconds": 300,
+
+			"Parameters": {
+				"JobDefinition": "${JobDefinitionName}",
+				"JobName": "${JobName}",
+				"JobQueue": "${JobQueue}",
+				"Parameters": {
+					"sleep_interval.$": "$$.Execution.Input.batch_sleep_interval",
+					"batch_body.$": "States.JsonToString($$.Execution.Input.input)",
+					"batch_status.$": "$$.Execution.Input.return_status",
+					"function_id": "FILLER",
+					"task_token": "FILLER"
+				},
+				"ArrayProperties": {
+					"Size": 3
+				}
+			},
+			"Next": "Submit Batch via Lambda Task with TaskToken"
+		},
+		"Submit Batch via Lambda Task with TaskToken": {
+			"Type": "Task",
+			"Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+			"TimeoutSeconds": 300,
+			"Parameters": {
+				"FunctionName": "${BatchJobSubmitFunction}",
+				"InvocationType": "Event",
+
+				"Payload": {
+					"body": {
+						"batchPayload": {
+							"test": "xyz"
+						}
+					},
+					"aws_stepfunction_execution_id.$": "$$.Execution.Id",
+					"token.$": "$$.Task.Token",
+					"dummytoken.$": "$$.Execution",
+					"sleep_interval.$": "$$.Execution.Input.batch_sleep_interval",
+					"status.$": "$$.Execution.Input.return_status",
+					"submitBatch": true
+				}
+			},
+			"Next": "Notify Success",
+			"Catch": [{
+				"ErrorEquals": ["States.ALL"],
+				"Next": "Notify Failure"
+			}]
+		},
+		"Notify Success": {
+			"Type": "Succeed"
+		},
+		"Notify Failure": {
+			"Type": "Fail"
+		}
+	}
+}

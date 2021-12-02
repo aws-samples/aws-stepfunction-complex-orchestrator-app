@@ -1,0 +1,61 @@
+{
+	"Comment": "Complex Orchestrator built in Amazon States Language using a Map Iterator to execute multiple branches at the same time.",
+	"StartAt": "Execute Nested Step Functions",
+	"States": {
+		"Execute Nested Step Functions": {
+			"Type": "Map",
+			"Next": "Final State",
+			"InputPath": "$.input",
+			"ItemsPath": "$.entries",
+			"Iterator": {
+				"StartAt": "Execute Nested Step Function",
+				"States": {
+					"Execute Nested Step Function": {
+						"Type": "Task",
+						"Resource": "arn:aws:states:::states:startExecution.sync",
+						"TimeoutSeconds": 1200,
+						"Parameters": {
+							"StateMachineArn": "${SyncNestedStepFunction2Arn}",
+							"Input": {
+								"NeedCallback": true,
+								"AWS_STEP_FUNCTIONS_STARTED_BY_EXECUTION_ID.$": "$$.Execution.Id",
+								"input.$": "$",
+								"batch_sleep_interval": "${batchSleepDuration}",
+								"return_status": "Success"
+							}
+						},
+						"Retry": [{
+							"ErrorEquals": [
+								"States.TaskFailed"
+							],
+							"IntervalSeconds": 30,
+							"BackoffRate": 2,
+							"MaxAttempts": 3
+						}],
+						"Next": "Check States",
+						"Catch": [{
+							"ErrorEquals": [
+								"States.ALL"
+							],
+							"Next": "Notify Failure"
+						}]
+					},
+					"Check States": {
+						"Type": "Pass",
+						"Next": "Notify Success"
+					},
+					"Notify Success": {
+						"Type": "Succeed"
+					},
+					"Notify Failure": {
+						"Type": "Fail"
+					}
+				}
+			}
+		},
+		"Final State": {
+			"Type": "Pass",
+			"End": true
+		}
+	}
+}

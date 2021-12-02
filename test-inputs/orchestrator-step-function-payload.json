@@ -1,0 +1,7 @@
+{
+    "input": {
+      "entries": [
+        { "name": "invoke1"}, { "name": "invoke2"}, { "name": "invoke3"}
+      ]
+   }
+}

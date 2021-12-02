@@ -1,0 +1,7 @@
+{
+    "body": {"key": "value"},
+    "status": "Success",
+    "sleep_interval": 20,
+    "token": "AASDLKD-38fd08ce-5f5e-434c-8997-6bba5e3f5a74",
+    "aws_stepfunction_execution_id": "234adf0-asdfadfssdfasdfasfasdffd"
+}
