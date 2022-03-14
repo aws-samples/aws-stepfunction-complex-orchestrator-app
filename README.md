@@ -54,8 +54,8 @@ The `sam build` command will build the source of your application. The `sam depl
 To build and deploy your application for the first time, run the following in your shell:
 
 ```bash
-git clone https://github.com/sparameswaran/stepfunction-complex-orchestrator-app
-cd stepfunction-complex-orchestrator-app
+git clone https://github.com/aws-samples/aws-stepfunction-complex-orchestrator-app
+cd aws-stepfunction-complex-orchestrator-app
 
 # Run this first and subsequently on making changes to code/templates
 sam build
