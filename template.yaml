@@ -12,10 +12,10 @@ Parameters:
     Default: batch-notify-step-function.sh
   VPCID:
     Type: String
-    Description: 'ID of the VPC (requires public subnets) to run Batch Jobs on Fargate'
+    Description: 'ID of the VPC (requires public subnets or subnets with NAT to allow internet access) to run Batch Jobs on Fargate'
   Subnets:
     Type: String
-    Description: 'Comma separated list of public subnets in the VPC specified to run AWS Batch jobs on Fargate '
+    Description: 'Comma separated list of private subnets with NAT to reach internet or public subnets in the VPC specified to run AWS Batch jobs on Fargate '
   batchSleepDuration:
     Type: Number
     Description: 'Batch script sleep time (in seconds) to mimic job activity, ensure its not greater than 60 seconds to avoid step function timeout'
@@ -309,10 +309,11 @@ Resources:
         Command: [ "Ref::batch_script","Ref::sleep_interval","Ref::batch_body","Ref::batch_status","Ref::function_id","Ref::task_token"]
         FargatePlatformConfiguration:
           PlatformVersion: "1.4.0"
-        # Fargate instance needs public ip enabled, otherwise wont be able to connect to Docker Hub to pull docker image.
-        # otherwwise ensure the private subnet where its running has NAT gateway enabled to allow outbound.
-        NetworkConfiguration:
-          AssignPublicIp: "ENABLED"
+        # Fargate instance needs to access internet to connect to Docker Hub in order to pull docker image.
+        # If deploying on VPC with only private subnets, ensure VPC has NAT gateway associated with its public subnets and default route to NAT to allow outbound.
+        # else enable public ip if going with public subnets.
+        #NetworkConfiguration:
+        #  AssignPublicIp: "ENABLED"
         JobRoleArn: !Ref BatchJobRole
         ExecutionRoleArn: !GetAtt AWSECSTaskExecutionRole.Arn
         Environment:

@@ -17,8 +17,21 @@ The application uses several AWS resources, including Step Functions state machi
 
 ## Requirements
 
-The AWS Batch jobs are run using Fargate. This requires a VPC (can be default vpc) and public subnet(s) association as part of the compute environment for Fargate.
+The AWS Batch jobs are run using Fargate. This requires a VPC (can be default vpc) and subnet(s) association as part of the compute environment for Fargate.
+
 Please provide a valid VPC id and a comma separated list of public subnets ids when requested by the SAM tool during deploy with guided option.
+
+If using private subnets, ensure vpc has a NAT gateway to allow Fargate to reach out to internet.
+If using public subnets, uncomment the NetworkConfiguration and AssignPublicIp configuration inside the template.yaml file to allow Public IPs for the Fargate containers.
+```
+        FargatePlatformConfiguration:
+          PlatformVersion: "1.4.0"
+        # Fargate instance needs to access internet to connect to Docker Hub in order to pull docker image.
+        # If deploying on VPC with only private subnets, ensure VPC has NAT gateway associated with its public subnets and default route to NAT to allow outbound.
+        # else enable public ip if going with public subnets.
+        #NetworkConfiguration:
+        #  AssignPublicIp: "ENABLED"
+```
 
 Additionally, please copy over the provided batch script (batch-notify-step-function.sh file under batch-script folder) into a newly generated S3 bucket (after running `sam deploy` successfully as detailed in the deploy steps). This script should be available in newly generated S3 bucket location before starting the test.
 
@@ -39,6 +52,8 @@ Need following information when running sam deploy:
 * VPC ID - Existing VPC where the AWS Batch would run
 * Subnets - Subnets belonging to the VPC where Fargate Compute envs would be created.
 
+*Note:* Check the `Requirements` on using private vs public subnets and steps to enable internet access for the Fargate containers.
+
 
 The `sam build` command will build the source of your application. The `sam deploy --guided` command will package and deploy your application to AWS, with a series of prompts:
 
@@ -46,7 +61,7 @@ The `sam build` command will build the source of your application. The `sam depl
 * **AWS Region**: The AWS region you want to deploy your app to.
 * **BatchScriptName**: `batch-notify-step-function.sh` - default script provided already (available under batch-script folder)
 * **VPCID**: Name of an existing VPC which would be used to provide Fargate based compute environment for the AWS Batch Jobs. This should have public subnets.
-* **Subnets**: comma separated list of public subnet ids within the above VPC.
+* **Subnets**: comma separated list of private or public subnet ids within the above VPC.
 * **Confirm changes before deploy**: If set to yes, any change sets will be shown to you before execution for manual review. If set to no, the AWS SAM CLI will automatically deploy application changes.
 * **Allow SAM CLI IAM role creation**: Many AWS SAM templates, including this example, create AWS IAM roles required for the AWS Lambda function(s) included to access AWS services. By default, these are scoped down to minimum required permissions. To deploy an AWS CloudFormation stack which creates or modifies IAM roles, the `CAPABILITY_IAM` value for `capabilities` must be provided. If permission isn't provided through this prompt, to deploy this example you must explicitly pass `--capabilities CAPABILITY_IAM` to the `sam deploy` command.
 * **Save arguments to samconfig.toml**: If set to yes, your choices will be saved to a configuration file inside the project, so that in the future you can just re-run `sam deploy` without parameters to deploy changes to your application.
