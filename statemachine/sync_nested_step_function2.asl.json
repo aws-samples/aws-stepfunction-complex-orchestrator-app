@@ -41,7 +41,7 @@
 			"Comment": "Submit array of Batch Jobs using Sync",
 			"Type": "Task",
 			"Resource": "arn:aws:states:::batch:submitJob.sync",
-			"TimeoutSeconds": 300,
+			"TimeoutSeconds": 400,
 
 			"Parameters": {
 				"JobDefinition": "${JobDefinitionName}",
@@ -63,7 +63,7 @@
 		"Submit Batch via Lambda Task with TaskToken": {
 			"Type": "Task",
 			"Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
-			"TimeoutSeconds": 300,
+			"TimeoutSeconds": 400,
 			"Parameters": {
 				"FunctionName": "${BatchJobSubmitFunction}",
 				"InvocationType": "Event",
