@@ -61,6 +61,7 @@ The `sam build` command will build the source of your application. The `sam depl
 * **AWS Region**: The AWS region you want to deploy your app to.
 * **BatchScriptName**: `batch-notify-step-function.sh` - default script provided already (available under batch-script folder)
 * **VPCID**: Name of an existing VPC which would be used to provide Fargate based compute environment for the AWS Batch Jobs. This should have public subnets.
+* **FargateSubnetAccessibility**: Specify whether Private or Public Subnets would be used for deploying Batch Jobs as Fargate Containers (that need internet access for pulling the docker images). Valid inputs are `Private` (default, requires NAT to access internet) or `Public` (which would enable Public IP for the Fargate Container).
 * **Subnets**: comma separated list of private or public subnet ids within the above VPC.
 * **Confirm changes before deploy**: If set to yes, any change sets will be shown to you before execution for manual review. If set to no, the AWS SAM CLI will automatically deploy application changes.
 * **Allow SAM CLI IAM role creation**: Many AWS SAM templates, including this example, create AWS IAM roles required for the AWS Lambda function(s) included to access AWS services. By default, these are scoped down to minimum required permissions. To deploy an AWS CloudFormation stack which creates or modifies IAM roles, the `CAPABILITY_IAM` value for `capabilities` must be provided. If permission isn't provided through this prompt, to deploy this example you must explicitly pass `--capabilities CAPABILITY_IAM` to the `sam deploy` command.
@@ -121,14 +122,17 @@ Use the sample payloads (available under test-inputs) to test the individual AWS
 If the AWS Batch job fails or if the step functions timed out, then the issue is due to missing batch script in the S3 bucket.
 Copy over the batch script into the s3 bucket generated as shown in Deployment.
 
+AWS Batch jobs can also fail trying to connect to Internet to pull down Docker images: either Public IP is disabled for the Fargate container when running on public subnet or no NAT access when running on private subnet (Check for errors: CannotPullContainerError: inspect image has been retried 5 time). Edit the parameters when running sam deploy to go with `Public` subnets that would enable Public IP for the Fargate container or select `Private` if deciding to deploy on private subnets that have NAT for Internet access.
+
 Whenever making changes to the code or SAM templates, rerun the sam build followed by sam deploy.
 
 ## Cleanup
 
-To delete the sample application that you created, use the AWS CLI. Assuming you used your project name for the stack name, you can run the following:
+To delete the sample application that you created, use the AWS CLI. First delete the S3 bucket hosting the batch script. Assuming you used your project name for the stack name, you can run the following:
 
 ```
 bash
+aws s3 rm s3://<sample-orchestrator-s3bucket> --recursive
 aws cloudformation delete-stack --stack-name <stack-name>
 ```
 

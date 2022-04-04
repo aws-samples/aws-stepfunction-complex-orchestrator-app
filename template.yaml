@@ -13,13 +13,26 @@ Parameters:
   VPCID:
     Type: String
     Description: 'ID of the VPC (requires public subnets or subnets with NAT to allow internet access) to run Batch Jobs on Fargate'
+  FargateSubnetAccessibility:
+    Type: String
+    Default: Private
+    AllowedValues:
+    - 'Public'
+    - 'Private'
+    Description: 'Using Private or Public Subnets for deploying Batch Jobs as Fargate Containers'
   Subnets:
     Type: String
-    Description: 'Comma separated list of private subnets with NAT to reach internet or public subnets in the VPC specified to run AWS Batch jobs on Fargate '
+    Description: 'Comma separated list of subnets in the VPC specified where to run batch jobs on fargate '
   batchSleepDuration:
     Type: Number
-    Description: 'Batch script sleep time (in seconds) to mimic job activity, ensure its not greater than 60 seconds to avoid step function timeout'
     Default: 15
+    Description: 'Batch script sleep time (in seconds) to mimic job activity, ensure its not greater than 60 seconds to avoid step function timeout'
+
+Conditions:
+  EnablePublicIpForFargate: !Equals
+    - !Ref FargateSubnetAccessibility
+    - 'Public'
+
 
 Resources:
   AWSBatchServiceRole:
@@ -309,11 +322,11 @@ Resources:
         Command: [ "Ref::batch_script","Ref::sleep_interval","Ref::batch_body","Ref::batch_status","Ref::function_id","Ref::task_token"]
         FargatePlatformConfiguration:
           PlatformVersion: "1.4.0"
-        # Fargate instance needs to access internet to connect to Docker Hub in order to pull docker image.
-        # If deploying on VPC with only private subnets, ensure VPC has NAT gateway associated with its public subnets and default route to NAT to allow outbound.
-        # else enable public ip if going with public subnets.
-        #NetworkConfiguration:
-        #  AssignPublicIp: "ENABLED"
+        # Fargate instance needs internet access to connect to Docker Hub and pull down docker image.
+        # If deployed to private subnet, ensure it has NAT gateway enabled to allow outbound.
+        # Otherwise, enable public ip when going with public subnets.
+        NetworkConfiguration:
+          !If [EnablePublicIpForFargate, AssignPublicIp: "ENABLED", !Ref "AWS::NoValue"]
         JobRoleArn: !Ref BatchJobRole
         ExecutionRoleArn: !GetAtt AWSECSTaskExecutionRole.Arn
         Environment:
